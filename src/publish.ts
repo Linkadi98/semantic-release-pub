@@ -9,50 +9,56 @@ import {
   getPubspec,
 } from "./utils.js";
 
-const SEMANTIC_RELEASE_PUB_TOKEN = "SEMANTIC_RELEASE_PUB_TOKEN";
+const PUB_AUTH_TOKEN = "PUB_AUTH_TOKEN";
 
 export const publish = async (
   pluginConfig: PluginConfig,
   { nextRelease: { version }, logger }: PublishContext,
 ) => {
-  const { cli, publishPub, useGithubOidc } = getConfig(pluginConfig);
-  if (!publishPub) {
-    logger.log(`Skipping publishing to pub.dev as publishPub is ${publishPub}`);
-    return;
-  }
+  const config = getConfig(pluginConfig);
+  const { cli, publishArgs } = config;
 
   const pubspec = getPubspec();
-  const pubToken = await getPubToken(useGithubOidc, logger);
-  await setPubToken(cli, pubToken);
+  const pubHost = pluginConfig.selfHosted ? pubspec.publish_to : "https://pub.dev";
+  const pubToken = await getPubToken(config, logger, pubHost);
 
-  logger.log(`Publishing version ${version} to pub.dev`);
-  await execa(cli, ["pub", "publish", "--force"]);
-  logger.log(`Published ${pubspec.name}@${version} on pub.dev`);
+  await setPubToken(cli, pubToken, pubHost);
+
+  logger.log(`Publishing version ${version} to ${pubHost}`);
+  await execa(cli, ["pub", "publish", ...(publishArgs || [])]);
+  logger.log(`Published ${pubspec.name}@${version} on ${pubHost}`);
+
+  const packageUrl = `${pubHost}/packages/${pubspec.name}/versions/${version}`;
 
   return {
-    name: "pub.dev package",
-    url: `https://pub.dev/packages/${pubspec.name}/versions/${version}`,
+    name: pubspec.name,
+    url: packageUrl,
   };
 };
 
-const getPubToken = async (useGithubOidc: boolean, logger: Signale) => {
-  if (useGithubOidc) {
-    logger.log("Using GitHub OIDC token to publish to pub.dev");
-    return await getGithubIdentityToken();
+const getPubToken = async (config: PluginConfig, logger: Signale, pubHost: string) => {
+  if (config.selfHosted) {
+    logger.log(`Using self-hosted pub token to publish to ${pubHost}`);
+    return process.env[PUB_AUTH_TOKEN];
   }
 
-  logger.log("Using Google identity token to publish to pub.dev");
-  const { GOOGLE_SERVICE_ACCOUNT_KEY } = process.env;
-  return await getGoogleIdentityToken(GOOGLE_SERVICE_ACCOUNT_KEY);
+  if (config.useGithubOidc) {
+    logger.log(`Using GitHub OIDC token to publish to ${pubHost}`);
+    return await getGithubIdentityToken(pubHost);
+  }
+
+  logger.log(`Using Google identity token to publish to ${pubHost}`);
+  return await getGoogleIdentityToken(pubHost, process.env.GOOGLE_SERVICE_ACCOUNT_KEY);
 };
 
-const setPubToken = async (cli: string, idToken: string) => {
-  process.env[SEMANTIC_RELEASE_PUB_TOKEN] = idToken;
+const setPubToken = async (cli: string, idToken: string, pubHost: string) => {
+  process.env[PUB_AUTH_TOKEN] = idToken;
+
   await execa(cli, [
     "pub",
     "token",
     "add",
-    "https://pub.dev",
-    `--env-var=${SEMANTIC_RELEASE_PUB_TOKEN}`,
+    pubHost,
+    `--env-var=${PUB_AUTH_TOKEN}`,
   ]);
 };

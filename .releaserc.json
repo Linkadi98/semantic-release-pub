@@ -1,0 +1,12 @@
+{
+  "branches": ["main"],
+  "plugins": [
+    "@semantic-release/commit-analyzer",
+    "@semantic-release/release-notes-generator",
+    [".", {
+      "cli": "dart",
+      "selfHosted": true,
+      "publishArgs": ["--force"]
+    }]
+  ]
+}

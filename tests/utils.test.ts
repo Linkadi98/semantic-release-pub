@@ -21,14 +21,14 @@ vi.mock("google-auth-library");
 vi.mock("fs");
 vi.mock("yaml");
 
-const pubDevAudience = "https://pub.dev";
+const pubHost = "https://pub.dev";
 
 describe("getConfig", () => {
   const config: PluginConfig = {
     cli: "flutter",
-    publishPub: false,
     updateBuildNumber: false,
     useGithubOidc: false,
+    selfHosted: false,
   };
 
   test("success", () => {
@@ -50,6 +50,10 @@ describe("getGoogleIdentityToken", () => {
     }
   `;
 
+  beforeEach(() => {
+    stubEnv();
+  });
+
   afterEach(() => {
     vi.restoreAllMocks();
   });
@@ -60,7 +64,7 @@ describe("getGoogleIdentityToken", () => {
     const jwtClient = mock<JWT>({ authorize });
     vi.mocked(JWT).mockReturnValue(jwtClient);
 
-    const actual = await getGoogleIdentityToken(serviceAccount);
+    const actual = await getGoogleIdentityToken(pubHost, serviceAccount);
 
     expect(actual).toEqual(idToken);
     expectJwtCalled();
@@ -81,7 +85,7 @@ describe("getGoogleIdentityToken", () => {
     vi.mocked(JWT).mockReturnValue(jwtClient);
 
     await expect(() =>
-      getGoogleIdentityToken(serviceAccount),
+      getGoogleIdentityToken(pubHost, serviceAccount),
     ).rejects.toThrowError(SemanticReleaseError);
 
     expectJwtCalled();
@@ -94,8 +98,12 @@ describe("getGoogleIdentityToken", () => {
       clientEmail,
       undefined,
       privateKey,
-      pubDevAudience,
+      pubHost,
     );
+  };
+
+  const stubEnv = () => {
+    vi.stubEnv("GOOGLE_SERVICE_ACCOUNT_KEY", serviceAccount);
   };
 });
 
@@ -109,11 +117,13 @@ describe("getGithubIdentityToken", () => {
   test("success", async () => {
     vi.mocked(core.getIDToken).mockResolvedValue(idToken);
 
-    const actual = await getGithubIdentityToken();
+    const actual = await getGithubIdentityToken(pubHost);
 
     expect(actual).toEqual(idToken);
-    expect(core.getIDToken).toHaveBeenNthCalledWith(1, pubDevAudience);
+    expect(core.getIDToken).toHaveBeenNthCalledWith(1, pubHost);
   });
+
+
 });
 
 describe("pubspecUtils", () => {
@@ -122,6 +132,8 @@ describe("pubspecUtils", () => {
   const pubspec = {
     name: "pub_package",
     version: "1.0.0",
+    publish_to: "https://pub.dev",
+    homepage: "https://pub.dev",
   };
 
   beforeEach(() => {

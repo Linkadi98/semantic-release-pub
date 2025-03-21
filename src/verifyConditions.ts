@@ -6,40 +6,36 @@ import {
   getConfig,
   getGithubIdentityToken,
   getGoogleIdentityToken,
+  getPubspec,
 } from "./utils.js";
 
-export const verifyConditions = async (
-  pluginConfig: PluginConfig,
-  { logger }: VerifyConditionsContext,
-) => {
-  const { cli, publishPub, useGithubOidc } = getConfig(pluginConfig);
-  if (publishPub) {
-    await verifyPublishToken(useGithubOidc);
-    await verifyCommand(cli);
-  } else {
-    logger.log(
-      `Skipping publish token and ${cli} CLI verification as publishPub is ${publishPub}`,
-    );
-  }
+export const verifyConditions = async (pluginConfig: PluginConfig) => {
+  const pubspec = getPubspec();
+  const { cli, useGithubOidc } = getConfig(pluginConfig);
+  await verifyPublishToken(
+    pluginConfig.selfHosted ? pubspec.publish_to : "https://pub.dev",
+    useGithubOidc,
+  );
+  await verifyCommand(cli);
 };
 
-const verifyPublishToken = async (useGithubOidc: boolean) => {
+const verifyPublishToken = async (pubHost: string, useGithubOidc: boolean) => {
   if (useGithubOidc) {
     try {
-      await getGithubIdentityToken();
+      await getGithubIdentityToken(pubHost);
     } catch (error) {
       throw new SemanticReleaseError(
         `Failed to get GitHub OIDC token: ${error}`,
       );
     }
   } else {
-    const { GOOGLE_SERVICE_ACCOUNT_KEY } = process.env;
+    const GOOGLE_SERVICE_ACCOUNT_KEY = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
     if (!GOOGLE_SERVICE_ACCOUNT_KEY) {
       throw new SemanticReleaseError(
         "Environment variable not found: GOOGLE_SERVICE_ACCOUNT_KEY",
       );
     } else {
-      await getGoogleIdentityToken(GOOGLE_SERVICE_ACCOUNT_KEY);
+      await getGoogleIdentityToken(pubHost, GOOGLE_SERVICE_ACCOUNT_KEY);
     }
   }
 };

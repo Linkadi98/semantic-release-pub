@@ -5,28 +5,35 @@ import { JWT } from "google-auth-library";
 import { parse } from "yaml";
 import { Pubspec, ServiceAccount } from "./schemas.js";
 import { PluginConfig } from "./types.js";
+import { log } from "console";
 
 export const PUBSPEC_PATH = "pubspec.yaml";
 const DEFAULT_CONFIG: PluginConfig = {
   cli: "dart",
-  publishPub: true,
   updateBuildNumber: false,
   useGithubOidc: false,
 };
 
-const PUB_DEV_AUDIENCE = "https://pub.dev";
+export const getPubHost = (pubspec: Pubspec): string => {
+  return pubspec.publish_to || "https://pub.dev";
+};
+
+export const isSelfHosted = (): boolean => {
+  const publishTo = getPubspec().publish_to;
+  return publishTo !== undefined && publishTo !== "https://pub.dev" && publishTo !== "none";
+}
 
 export const getConfig = (config: PluginConfig): PluginConfig => {
   return { ...DEFAULT_CONFIG, ...config };
 };
 
-export const getGoogleIdentityToken = async (serviceAccountStr: string) => {
+export const getGoogleIdentityToken = async (pubHost: string, serviceAccountStr: string) => {
   const serviceAccountJson = getServiceAccount(serviceAccountStr);
   const jwtClient = new JWT(
     serviceAccountJson.client_email,
     undefined,
     serviceAccountJson.private_key,
-    PUB_DEV_AUDIENCE,
+    pubHost,
   );
 
   const creds = await jwtClient.authorize();
@@ -39,8 +46,8 @@ export const getGoogleIdentityToken = async (serviceAccountStr: string) => {
   return creds.id_token;
 };
 
-export const getGithubIdentityToken = async () => {
-  return core.getIDToken(PUB_DEV_AUDIENCE);
+export const getGithubIdentityToken = async (pubHost: string, ) => {
+  return core.getIDToken(pubHost);
 };
 
 export const getPubspecString = () => {

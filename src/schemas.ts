@@ -7,6 +7,6 @@ export const ServiceAccount = z.object({
 
 export type ServiceAccount = z.infer<typeof ServiceAccount>;
 
-export const Pubspec = z.object({ name: z.string(), version: z.string() });
+export const Pubspec = z.object({ name: z.string(), version: z.string(), publish_to: z.string().optional(), homepage: z.string().optional() });
 
 export type Pubspec = z.infer<typeof Pubspec>;

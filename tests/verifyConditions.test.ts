@@ -19,12 +19,13 @@ describe("verifyConditions", () => {
   const cli = "dart";
   const serviceAccount = "serviceAccount";
   const idToken = "idToken";
+  const pubHost = "https://pub.dev";
 
   const testConfig: PluginConfig = {
     cli,
-    publishPub: true,
     updateBuildNumber: false,
     useGithubOidc: false,
+    selfHosted: false,
   };
 
   const logger = mock<Signale>();
@@ -46,27 +47,17 @@ describe("verifyConditions", () => {
   test("success", async () => {
     stubEnv();
 
-    await verifyConditions(testConfig, context);
+    await verifyConditions(testConfig);
 
     expect(execa).toBeCalledWith(cli);
     expectGetGoogleIdentityTokenCalled();
-  });
-
-  test("success with publishPub=false", async () => {
-    const config = { ...testConfig, publishPub: false };
-    vi.mocked(getConfig).mockReturnValue(config);
-
-    await verifyConditions(config, context);
-
-    expect(getGoogleIdentityToken).toBeCalledTimes(0);
-    expect(execa).toBeCalledTimes(0);
   });
 
   test("success with useGithubOidc=true", async () => {
     const config = { ...testConfig, useGithubOidc: true };
     vi.mocked(getConfig).mockReturnValue(config);
 
-    await verifyConditions(config, context);
+    await verifyConditions(config);
 
     expect(getGithubIdentityToken).toBeCalledTimes(1);
     expect(getGoogleIdentityToken).toBeCalledTimes(0);
@@ -109,12 +100,12 @@ describe("verifyConditions", () => {
     vi.stubEnv("GOOGLE_SERVICE_ACCOUNT_KEY", serviceAccount);
 
   const expectGetGoogleIdentityTokenCalled = () =>
-    expect(getGoogleIdentityToken).toHaveBeenNthCalledWith(1, serviceAccount);
+    expect(getGoogleIdentityToken).toHaveBeenNthCalledWith(1,  pubHost, serviceAccount);
 
   const expectSemanticReleaseError = async (
     config: PluginConfig = testConfig,
   ) => {
-    await expect(() => verifyConditions(config, context)).rejects.toThrowError(
+    await expect(() => verifyConditions(config)).rejects.toThrowError(
       SemanticReleaseError,
     );
   };

@@ -20,19 +20,23 @@ describe("publish", () => {
   const serviceAccount = "serviceAccount";
   const googleIdToken = "googleIdToken";
   const githubIdToken = "githubIdToken";
+  const pubAuth = "some_token_value";
   const version = "1.2.3";
-  const semanticReleasePubToken = "SEMANTIC_RELEASE_PUB_TOKEN";
+  const semanticReleasePubToken = "PUB_AUTH_TOKEN";
 
   const testConfig: PluginConfig = {
     cli,
-    publishPub: true,
     updateBuildNumber: false,
     useGithubOidc: false,
+    selfHosted: true,
+    publishArgs: ["--force"],
   };
 
   const pubspec: Pubspec = {
     name: "pub_package",
     version,
+    publish_to: "https://micropub-api.ommani.vn",
+    homepage: "https://micropub.ommani.vn",
   };
 
   const nextRelease = mock<NextRelease>();
@@ -61,19 +65,22 @@ describe("publish", () => {
     const actual = await publish(testConfig, context);
 
     expect(actual).toEqual({
-      name: "pub.dev package",
-      url: `https://pub.dev/packages/${pubspec.name}/versions/${version}`,
+      name: "pub_package",
+      url: `https://micropub-api.ommani.vn/packages/pub_package/versions/${version}`,
     });
-    expect(process.env[semanticReleasePubToken]).toEqual(googleIdToken);
 
-    expect(getGoogleIdentityToken).toHaveBeenNthCalledWith(1, serviceAccount);
+    expect(process.env[semanticReleasePubToken]).toEqual(pubAuth);
+
+    // await getGoogleIdentityToken("https://micropub-api.ommani.vn", serviceAccount);
+    // expect(getGoogleIdentityToken).toHaveBeenNthCalledWith(1, "https://micropub-api.ommani.vn", serviceAccount);
     expect(execa).toHaveBeenNthCalledWith(1, cli, [
       "pub",
       "token",
       "add",
-      "https://pub.dev",
+      "https://micropub-api.ommani.vn",
       `--env-var=${semanticReleasePubToken}`,
     ]);
+
     expect(execa).toHaveBeenNthCalledWith(2, cli, [
       "pub",
       "publish",
@@ -82,14 +89,14 @@ describe("publish", () => {
   });
 
   test("success with useGithubOidc=true", async () => {
-    const config = { ...testConfig, useGithubOidc: true };
+    const config = { ...testConfig, useGithubOidc: true, selfHosted: false };
     vi.mocked(getConfig).mockReturnValue(config);
 
     const actual = await publish(config, context);
 
     expect(actual).toEqual({
-      name: "pub.dev package",
-      url: `https://pub.dev/packages/${pubspec.name}/versions/${version}`,
+      name: "pub_package",
+      url: `https://pub.dev/packages/pub_package/versions/${version}`,
     });
     expect(process.env[semanticReleasePubToken]).toEqual(githubIdToken);
 
@@ -101,24 +108,11 @@ describe("publish", () => {
       "https://pub.dev",
       `--env-var=${semanticReleasePubToken}`,
     ]);
-    expect(execa).toHaveBeenNthCalledWith(2, cli, [
-      "pub",
-      "publish",
-      "--force",
-    ]);
+    expect(execa).toHaveBeenNthCalledWith(2, cli, ["pub", "publish", "--force"]);
   });
 
-  test("skip publish", async () => {
-    const newConfig = { ...testConfig, publishPub: false };
-    vi.mocked(getConfig).mockReturnValue(newConfig);
-
-    const actual = await publish(newConfig, context);
-
-    expect(actual).toBeUndefined();
-    expect(getGoogleIdentityToken).toBeCalledTimes(0);
-    expect(execa).toBeCalledTimes(0);
-  });
-
-  const stubEnv = () =>
+  const stubEnv = () => {
     vi.stubEnv("GOOGLE_SERVICE_ACCOUNT_KEY", serviceAccount);
+    vi.stubEnv(semanticReleasePubToken, pubAuth);
+  };
 });

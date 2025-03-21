@@ -4,7 +4,7 @@ import { NextRelease, PrepareContext } from "semantic-release";
 import { Signale } from "signale";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { mock } from "vitest-mock-extended";
-import { PluginConfig, prepare } from "../src/index.js";
+import { PluginConfig, prepare } from "./src";
 
 vi.mock("fs");
 
@@ -20,13 +20,15 @@ describe("prepare", () => {
 
   const config: PluginConfig = {
     cli,
-    publishPub: true,
     updateBuildNumber: false,
+    useGithubOidc: false
   };
 
   const basePubspec = codeBlock`
     name: pub_package
     version: ${versionPlaceholder}
+    publish_to: https://micropub-api.ommani.vn
+    homepage: https://micropub.ommani.vn
 
     environment:
       sdk: ">=3.0.0 <4.0.0"
