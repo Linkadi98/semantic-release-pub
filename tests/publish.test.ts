@@ -3,7 +3,7 @@ import { NextRelease, PublishContext } from "semantic-release";
 import { Signale } from "signale";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { mock } from "vitest-mock-extended";
-import { PluginConfig, publish } from "../src/index.js";
+
 import { Pubspec } from "../src/schemas.js";
 import {
   getConfig,
@@ -11,6 +11,7 @@ import {
   getGoogleIdentityToken,
   getPubspec,
 } from "../src/utils.js";
+import { PluginConfig, publish } from "../src";
 
 vi.mock("execa");
 vi.mock("../src/utils");
@@ -108,7 +109,11 @@ describe("publish", () => {
       "https://pub.dev",
       `--env-var=${semanticReleasePubToken}`,
     ]);
-    expect(execa).toHaveBeenNthCalledWith(2, cli, ["pub", "publish", "--force"]);
+    expect(execa).toHaveBeenNthCalledWith(2, cli, [
+      "pub",
+      "publish",
+      "--force",
+    ]);
   });
 
   const stubEnv = () => {

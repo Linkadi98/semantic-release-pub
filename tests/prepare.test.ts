@@ -4,7 +4,7 @@ import { NextRelease, PrepareContext } from "semantic-release";
 import { Signale } from "signale";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { mock } from "vitest-mock-extended";
-import { PluginConfig, prepare } from "./src";
+import { PluginConfig, prepare } from "../src";
 
 vi.mock("fs");
 
@@ -21,7 +21,7 @@ describe("prepare", () => {
   const config: PluginConfig = {
     cli,
     updateBuildNumber: false,
-    useGithubOidc: false
+    useGithubOidc: false,
   };
 
   const basePubspec = codeBlock`

@@ -6,7 +6,6 @@ import { Credentials, JWT } from "google-auth-library";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { mock } from "vitest-mock-extended";
 import { parse } from "yaml";
-import { PluginConfig } from "../src";
 import {
   getConfig,
   getGithubIdentityToken,
@@ -15,6 +14,7 @@ import {
   getPubspecFromString,
   getPubspecString,
 } from "../src/utils";
+import { PluginConfig } from "../src";
 
 vi.mock("@actions/core");
 vi.mock("google-auth-library");
@@ -122,8 +122,6 @@ describe("getGithubIdentityToken", () => {
     expect(actual).toEqual(idToken);
     expect(core.getIDToken).toHaveBeenNthCalledWith(1, pubHost);
   });
-
-
 });
 
 describe("pubspecUtils", () => {

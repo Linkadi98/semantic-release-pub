@@ -4,12 +4,13 @@ import { VerifyConditionsContext } from "semantic-release";
 import { Signale } from "signale";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { mock } from "vitest-mock-extended";
-import { PluginConfig, verifyConditions } from "../src/index.js";
 import {
   getConfig,
   getGithubIdentityToken,
   getGoogleIdentityToken,
 } from "../src/utils.js";
+import { PluginConfig, verifyConditions } from "../src";
+
 
 vi.mock("execa");
 vi.mock("google-auth-library");
@@ -100,7 +101,11 @@ describe("verifyConditions", () => {
     vi.stubEnv("GOOGLE_SERVICE_ACCOUNT_KEY", serviceAccount);
 
   const expectGetGoogleIdentityTokenCalled = () =>
-    expect(getGoogleIdentityToken).toHaveBeenNthCalledWith(1,  pubHost, serviceAccount);
+    expect(getGoogleIdentityToken).toHaveBeenNthCalledWith(
+      1,
+      pubHost,
+      serviceAccount,
+    );
 
   const expectSemanticReleaseError = async (
     config: PluginConfig = testConfig,
