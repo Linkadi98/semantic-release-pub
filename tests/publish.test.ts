@@ -4,17 +4,37 @@ import { Signale } from "signale";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { mock } from "vitest-mock-extended";
 
-import { Pubspec } from "../src/schemas.js";
+import { Pubspec } from "../lib/schemas.js";
 import {
   getConfig,
   getGithubIdentityToken,
   getGoogleIdentityToken,
-  getPubspec,
-} from "../src/utils.js";
-import { PluginConfig, publish } from "../src";
+  getPubspec, getPubspecString,
+} from "../lib/utils.js";
+
+import {codeBlock} from "common-tags";
+import {PluginConfig, publish} from "../index.ts";
+import {execSync} from "child_process";
 
 vi.mock("execa");
-vi.mock("../src/utils");
+vi.mock("../lib/utils");
+vi.mock("child_process");
+
+const basePubspec = codeBlock`
+    name: pub_package
+    version: 1.2.3
+    publish_to: https://micropub-api.ommani.vn
+    homepage: https://micropub.ommani.vn
+
+    environment:
+      sdk: ">=3.0.0 <4.0.0"
+
+    dependencies:
+      packageA: 1.0.0
+      packageB:
+        hosted: https://some-package-server.com
+        version: 1.2.0
+  `;
 
 describe("publish", () => {
   const cli = "dart";
@@ -49,10 +69,11 @@ describe("publish", () => {
     context.logger = logger;
     context.nextRelease = nextRelease;
 
-    vi.mocked(getConfig).mockReturnValue(testConfig);
     vi.mocked(getGoogleIdentityToken).mockResolvedValue(googleIdToken);
+    vi.mocked(getPubspecString).mockReturnValue(basePubspec);
     vi.mocked(getPubspec).mockReturnValue(pubspec);
     vi.mocked(getGithubIdentityToken).mockResolvedValue(githubIdToken);
+    vi.mocked(execSync).mockImplementation(() => Buffer.from(''));
   });
 
   afterEach(() => {
@@ -60,8 +81,9 @@ describe("publish", () => {
     vi.restoreAllMocks();
   });
 
-  test("success", async () => {
+  test("Publish self-hosted package", async () => {
     stubEnv();
+    vi.mocked(getConfig).mockReturnValue(testConfig);
 
     const actual = await publish(testConfig, context);
 
@@ -72,8 +94,6 @@ describe("publish", () => {
 
     expect(process.env[semanticReleasePubToken]).toEqual(pubAuth);
 
-    // await getGoogleIdentityToken("https://micropub-api.ommani.vn", serviceAccount);
-    // expect(getGoogleIdentityToken).toHaveBeenNthCalledWith(1, "https://micropub-api.ommani.vn", serviceAccount);
     expect(execa).toHaveBeenNthCalledWith(1, cli, [
       "pub",
       "token",
@@ -89,9 +109,12 @@ describe("publish", () => {
     ]);
   });
 
-  test("success with useGithubOidc=true", async () => {
+  test("Publish with useGithubOidc=true", async () => {
     const config = { ...testConfig, useGithubOidc: true, selfHosted: false };
     vi.mocked(getConfig).mockReturnValue(config);
+    vi.fn(getPubspec).mockReturnValue(pubspec);
+    vi.fn(getConfig).mockReturnValue(config);
+    vi.stubEnv(semanticReleasePubToken, githubIdToken);
 
     const actual = await publish(config, context);
 
@@ -99,9 +122,42 @@ describe("publish", () => {
       name: "pub_package",
       url: `https://pub.dev/packages/pub_package/versions/${version}`,
     });
+
     expect(process.env[semanticReleasePubToken]).toEqual(githubIdToken);
 
     expect(getGithubIdentityToken).toHaveBeenCalledOnce();
+    expect(execa).toHaveBeenNthCalledWith(1, cli, [
+      "pub",
+      "token",
+      "add",
+      "https://pub.dev",
+      `--env-var=${semanticReleasePubToken}`,
+    ]);
+    expect(execa).toHaveBeenNthCalledWith(2, cli, [
+      "pub",
+      "publish",
+      "--force",
+    ]);
+  });
+
+  test("Publish with useGithubOidc=false, self-hosted=false", async () => {
+    const config = { ...testConfig, useGithubOidc: false, selfHosted: false };
+    vi.mocked(getConfig).mockReturnValue(config);
+    vi.fn(getPubspec).mockReturnValue(pubspec);
+    vi.fn(getConfig).mockReturnValue(config);
+    vi.stubEnv(semanticReleasePubToken, googleIdToken);
+
+    const actual = await publish(config, context);
+
+    expect(actual).toEqual({
+      name: "pub_package",
+      url: `https://pub.dev/packages/pub_package/versions/${version}`,
+    });
+
+    expect(process.env[semanticReleasePubToken]).toEqual(googleIdToken);
+
+    expect(getGoogleIdentityToken).toHaveBeenCalledOnce();
+
     expect(execa).toHaveBeenNthCalledWith(1, cli, [
       "pub",
       "token",

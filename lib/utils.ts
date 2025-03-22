@@ -5,13 +5,14 @@ import { JWT } from "google-auth-library";
 import { parse } from "yaml";
 import { Pubspec, ServiceAccount } from "./schemas.js";
 import { PluginConfig } from "./types.js";
-import { log } from "console";
 
 export const PUBSPEC_PATH = "pubspec.yaml";
 const DEFAULT_CONFIG: PluginConfig = {
   cli: "dart",
   updateBuildNumber: false,
   useGithubOidc: false,
+  selfHosted: false,
+  publishArgs: [],
 };
 
 export const getPubHost = (pubspec: Pubspec): string => {

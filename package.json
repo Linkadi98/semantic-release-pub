@@ -3,13 +3,13 @@
   "version": "0.10.2",
   "description": "semantic-release plugin to publish a Dart or Flutter package",
   "main": "dist/index.ts",
-  "author": "zeshuaro@gmail.com",
+  "author": "minhphamdbp.work@gmail.com",
   "license": "MIT",
   "type": "module",
-  "homepage": "https://github.com/zeshuaro/semantic-release-pub",
+  "homepage": "https://github.com/Linkadi98/semantic-release-pub",
   "repository": {
     "type": "git",
-    "url": "https://github.com/zeshuaro/semantic-release-pub"
+    "url": "https://github.com/Linkadi98/semantic-release-pub"
   },
   "keywords": [
     "dart",
@@ -25,23 +25,20 @@
   "scripts": {
     "build": "tsc",
     "test": "vitest run tests --coverage",
-    "lint": "ESLINT_USE_FLAT_CONFIG=false eslint --ext .ts src tests && prettier --check src/**/*.ts tests/**/*.ts",
-    "format": "ESLINT_USE_FLAT_CONFIG=false eslint --ext .ts --fix src tests && prettier --write src/**/*.ts tests/**/*.ts"
+    "lint": "ESLINT_USE_FLAT_CONFIG=false eslint --ext .ts lib tests && prettier --check lib/**/*.ts tests/**/*.ts",
+    "format": "ESLINT_USE_FLAT_CONFIG=false eslint --ext .ts --fix lib tests && prettier --write lib/**/*.ts tests/**/*.ts"
   },
   "engines": {
     "node": ">=22.14.0"
   },
   "dependencies": {
     "@actions/core": "^1.11.1",
-    "@semantic-release/error": "^4.0.0",
     "execa": "^9.5.2",
     "google-auth-library": "^9.15.1",
     "yaml": "^2.7.0",
     "zod": "^3.24.2"
   },
   "devDependencies": {
-    "@semantic-release/changelog": "6.0.3",
-    "@semantic-release/git": "10.0.1",
     "@types/common-tags": "1.8.4",
     "@types/semantic-release": "20.0.6",
     "@types/semantic-release__error": "3.0.3",
@@ -49,19 +46,17 @@
     "@typescript-eslint/eslint-plugin": "8.26.1",
     "@typescript-eslint/parser": "8.26.1",
     "@vitest/coverage-v8": "3.0.8",
-    "common-tags": "1.8.2",
+    "common-tags": "^1.8.2",
     "conventional-changelog-conventionalcommits": "8.0.0",
     "eslint": "9.22.0",
     "eslint-config-prettier": "^10.1.1",
-    "eslint-config-semistandard": "17.0.0",
-    "eslint-config-standard": "17.1.0",
     "eslint-plugin-import": "2.31.0",
     "eslint-plugin-n": "17.16.2",
     "eslint-plugin-promise": "7.2.1",
     "prettier": "3.5.3",
     "semantic-release": "^24.2.3",
     "typescript": "5.8.2",
-    "vitest": "3.0.8",
+    "vitest": "3.0.9",
     "vitest-mock-extended": "3.0.1"
   }
 }

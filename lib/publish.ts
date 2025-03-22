@@ -9,11 +9,13 @@ import {
   getPubspec,
 } from "./utils.js";
 
+import { execSync } from "child_process";
+
 const PUB_AUTH_TOKEN = "PUB_AUTH_TOKEN";
 
 export const publish = async (
   pluginConfig: PluginConfig,
-  { nextRelease: { version }, logger }: PublishContext,
+  { nextRelease: { version }, logger, branch }: PublishContext,
 ) => {
   const config = getConfig(pluginConfig);
   const { cli, publishArgs } = config;
@@ -29,6 +31,16 @@ export const publish = async (
   logger.log(`Published ${pubspec.name}@${version} on ${pubHost}`);
 
   const packageUrl = `${pubHost}/packages/${pubspec.name}/versions/${version}`;
+
+  try {
+    execSync('git add pubspec.yaml');
+    execSync(`git commit -m "chore(release): update pubspec.yaml to ${version} [skip ci]"`);
+    execSync(`git push origin ${branch.name}`);
+    logger.log('Successfully committed pubspec.yaml changes.');
+  } catch (error) {
+    logger.error('Error committing pubspec.yaml changes:', error);
+    throw error;
+  }
 
   return {
     name: pubspec.name,

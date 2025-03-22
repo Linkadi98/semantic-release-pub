@@ -7,14 +7,31 @@ import { mock } from "vitest-mock-extended";
 import {
   getConfig,
   getGithubIdentityToken,
-  getGoogleIdentityToken,
-} from "../src/utils.js";
-import { PluginConfig, verifyConditions } from "../src";
+  getGoogleIdentityToken, getPubspecString,
+} from "../lib/utils.js";
+import { PluginConfig, verifyConditions } from "../index.ts";
+import {codeBlock} from "common-tags";
+
+const basePubspec = codeBlock`
+    name: pub_package
+    version: 1.2.3
+    publish_to: https://micropub-api.ommani.vn
+    homepage: https://micropub.ommani.vn
+
+    environment:
+      sdk: ">=3.0.0 <4.0.0"
+
+    dependencies:
+      packageA: 1.0.0
+      packageB:
+        hosted: https://some-package-server.com
+        version: 1.2.0
+  `;
 
 
 vi.mock("execa");
 vi.mock("google-auth-library");
-vi.mock("../src/utils");
+vi.mock("../lib/utils");
 
 describe("verifyConditions", () => {
   const cli = "dart";
@@ -27,6 +44,7 @@ describe("verifyConditions", () => {
     updateBuildNumber: false,
     useGithubOidc: false,
     selfHosted: false,
+    publishArgs: ["--force"],
   };
 
   const logger = mock<Signale>();
@@ -36,6 +54,7 @@ describe("verifyConditions", () => {
     context.logger = logger;
 
     vi.mocked(getConfig).mockReturnValue(testConfig);
+    vi.mocked(getPubspecString).mockReturnValue(basePubspec);
     vi.mocked(getGoogleIdentityToken).mockResolvedValue(idToken);
     vi.mocked(getGithubIdentityToken).mockResolvedValue(idToken);
   });
@@ -47,7 +66,6 @@ describe("verifyConditions", () => {
 
   test("success", async () => {
     stubEnv();
-
     await verifyConditions(testConfig);
 
     expect(execa).toBeCalledWith(cli);

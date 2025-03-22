@@ -4,7 +4,7 @@ import { NextRelease, PrepareContext } from "semantic-release";
 import { Signale } from "signale";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { mock } from "vitest-mock-extended";
-import { PluginConfig, prepare } from "../src";
+import { PluginConfig, prepare } from "../index.ts";
 
 vi.mock("fs");
 

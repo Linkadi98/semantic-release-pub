@@ -13,8 +13,8 @@ import {
   getPubspec,
   getPubspecFromString,
   getPubspecString,
-} from "../src/utils";
-import { PluginConfig } from "../src";
+} from "../lib/utils.ts";
+import { PluginConfig } from "../index.ts";
 
 vi.mock("@actions/core");
 vi.mock("google-auth-library");
@@ -29,6 +29,7 @@ describe("getConfig", () => {
     updateBuildNumber: false,
     useGithubOidc: false,
     selfHosted: false,
+    publishArgs: ["--force"],
   };
 
   test("success", () => {
@@ -73,7 +74,7 @@ describe("getGoogleIdentityToken", () => {
 
   test("error due to invalid service account", async () => {
     await expect(() =>
-      getGoogleIdentityToken("clearlyInvalid"),
+      getGoogleIdentityToken("clearlyInvalid", undefined),
     ).rejects.toThrowError(SemanticReleaseError);
     expect(JWT).toBeCalledTimes(0);
   });
